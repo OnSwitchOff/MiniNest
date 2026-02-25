@@ -6,33 +6,26 @@ import {Middleware} from "../../common/interfaces/middleware";
 import {Pipe} from "../../common/interfaces/pipe";
 import {ExceptionFilter} from "../../common/interfaces/exception-filter";
 
+export interface ChainFactoryCreateMetaData {
+    middlewares: (new () => Middleware)[];
+    guards: (new () => Guard)[];
+    pipes: (new () => Pipe)[];
+    interceptors: (new () => Interceptor)[];
+    filters: (new () => ExceptionFilter)[];
+}
+
 export class ChainFactory {
-
-    constructor(
-        private readonly app: any
-    ) {}
-
     create(
         context: ExecutionContext,
-        metadata: {
-            middlewares: (new () => Middleware)[];
-            guards: (new () => Guard)[];
-            pipes: (new () => Pipe)[];
-            interceptors: (new () => Interceptor)[];
-            filters: (new () => ExceptionFilter)[];
-        },
+        metadata: ChainFactoryCreateMetaData,
         handler: ChainHandler
     ): NextFunction {
-
         const wrappedMiddlewares: ChainHandler[] = metadata.middlewares
             .map(m => this.wrapMiddleware(new m()));
-
         const wrappedGuards: ChainHandler[] = metadata.guards
             .map(g => this.wrapGuard(new g()));
-
         const wrappedInterceptors: ChainHandler[] = metadata.interceptors
             .map(i => this.wrapInterceptor(new i()));
-
         const wrappedPipes: ChainHandler[] = metadata.pipes
             .map(p => this.wrapPipe(new p()));
 
@@ -40,9 +33,7 @@ export class ChainFactory {
 
         // ===== Compose chain =====
         const mainChain = this.compose(chain, context);
-
         const exceptionFilters = metadata.filters.map((f) => new f());
-
         return this.wrapWithExceptionFilter(context, mainChain, exceptionFilters);
     }
 
@@ -55,7 +46,6 @@ export class ChainFactory {
             return next();
         };
     }
-
     private wrapInterceptor(interceptor: Interceptor): ChainHandler {
         return async (context, next) => {
             return interceptor.intercept(context, {
@@ -63,7 +53,6 @@ export class ChainFactory {
             });
         };
     }
-
     private wrapMiddleware(middleware: Middleware): ChainHandler {
         return async (context, next) => {
             return middleware.use(context, next);

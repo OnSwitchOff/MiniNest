@@ -1,8 +1,5 @@
 import "reflect-metadata";
 import {Application} from "./framework/application";
-import {AppController} from "./app/app.controller";
-import {container} from "./framework/container";
-import {AppService, ConfigService} from "./app/app.service";
 import {AppModule} from "./app/app.module";
 import {TrimPipe} from "./app/pipes/trimPipe";
 import {EmptyStringToUndefinedPipe} from "./app/pipes/emptyStringToUndefinedPipe";
@@ -19,4 +16,4 @@ async function bootstrap() {
     console.log("Server started on http://localhost:3000");
 }
 
-bootstrap();
+bootstrap().then(_ => { console.log("then"); });

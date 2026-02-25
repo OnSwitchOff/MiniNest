@@ -1,6 +1,9 @@
 import { Provider } from "./provider";
 import { Token } from "./token";
 
+export const INJECT_TOKENS_KEY = Symbol("inject_tokens");
+export const DESIGN_PARAM_TYPES_METADATA_KEY = Symbol("design:paramtypes");
+
 class Container {
     static instance = new Container();
 
@@ -30,13 +33,20 @@ class Container {
             const deps = (provider.deps || []).map(dep => this.resolve(dep));
             instance = provider.useFactory(...deps);
         } else if (provider.useClass) {
-            const paramTypes = Reflect.getMetadata("design:paramtypes", provider.useClass) || [];
-            const deps = paramTypes.map((dep: any) => this.resolve(dep));
+            const paramTypes = Reflect.getMetadata(DESIGN_PARAM_TYPES_METADATA_KEY, provider.useClass) || [];
+            const injectTokens = Reflect.getMetadata(INJECT_TOKENS_KEY, provider.useClass) || {};
+            const deps = paramTypes.map((paramType, index) => {
+                const overrideToken = injectTokens[index];
+                const finalToken = overrideToken || paramType;
+                if (finalToken === token) {
+                    throw new Error(`Circular dependency detected for token ${token.toString()}`);
+                }
+                return this.resolve(finalToken);
+            });
             instance = new provider.useClass(...deps);
         } else {
             throw new Error(`Provider for token ${token.toString()} is invalid`);
         }
-
         this.instances.set(token, instance);
         return instance;
     }
