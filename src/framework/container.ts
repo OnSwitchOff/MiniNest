@@ -57,5 +57,4 @@ export class Container {
     }
 }
 
-// singleton експорт
 export const container = Container.instance;
